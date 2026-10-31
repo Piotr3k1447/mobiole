@@ -232,7 +232,7 @@ jobs:
         if: steps.detect.outputs.type == 'maui'
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '26.5'
+          xcode-version: '26.6'
 
       - name: Setup .NET
         if: steps.detect.outputs.type == 'maui'
