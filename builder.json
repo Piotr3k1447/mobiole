@@ -1,0 +1,18 @@
+{
+  "project": "Barbara Kierowca",
+  "platform": "ios",
+  "github": {
+    "owner": "Piotr3k1447",
+    "repo": "mobiole"
+  },
+  "provider": "github",
+  "codemagic": {},
+  "bitrise": {},
+  "ios": {},
+  "flutter": {
+    "watch": {}
+  },
+  "reactNative": {},
+  "kmp": {},
+  "mobai": {}
+}
