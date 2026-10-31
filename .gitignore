@@ -1,0 +1,17 @@
+# Build and IDE files
+.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+builder.exe
+
+# Local credentials and signing keys
+.env
+.env.*
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key

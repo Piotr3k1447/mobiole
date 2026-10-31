@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Barbara_Kierowca.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout x:Name="Root" Padding="24,24,24,40" Spacing="12" MaximumWidthRequest="700" />
+    </ScrollView>
+</ContentPage>
