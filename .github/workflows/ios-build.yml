@@ -208,7 +208,9 @@ jobs:
       - name: Detect project type
         id: detect
         run: |
-          if [ -f "pubspec.yaml" ]; then
+          if [ -f "Barbara Kierowca/Barbara Kierowca.csproj" ]; then
+            echo "type=maui" >> $GITHUB_OUTPUT
+          elif [ -f "pubspec.yaml" ]; then
             echo "type=flutter" >> $GITHUB_OUTPUT
           elif [ -f "package.json" ] && grep -q '"expo"' package.json; then
             echo "type=expo" >> $GITHUB_OUTPUT
@@ -219,6 +221,22 @@ jobs:
           else
             echo "type=native" >> $GITHUB_OUTPUT
           fi
+
+      - name: Check MAUI signing support
+        if: steps.detect.outputs.type == 'maui' && steps.params.outputs.use_signing == 'true'
+        run: |
+          echo "::error::Signed MAUI builds are not configured. Run an unsigned build or configure .NET MAUI signing separately."
+          exit 1
+
+      - name: Setup .NET
+        if: steps.detect.outputs.type == 'maui'
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI iOS workload
+        if: steps.detect.outputs.type == 'maui'
+        run: dotnet workload install maui-ios
 
       # A gitignored *.xcconfig next to a committed template is a common iOS
       # convention. The snapshot then carries the template but not the config,
@@ -858,7 +876,38 @@ jobs:
           echo "  identity: $CODE_SIGN_IDENTITY"
           echo "The build writes these into the app target's build settings; its PRODUCT_BUNDLE_IDENTIFIER must match the app id above. Extension targets get the profiles listed above by bundle id."
 
+      - name: Build MAUI IPA
+        if: steps.detect.outputs.type == 'maui'
+        env:
+          BUILD_ID: ${{ steps.params.outputs.build_id }}
+          CONFIGURATION: ${{ steps.params.outputs.configuration }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$BUILD_ID" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            echo "::error::Invalid build identifier."
+            exit 1
+          fi
+          if [[ "$CONFIGURATION" != "Debug" && "$CONFIGURATION" != "Release" ]]; then
+            echo "::error::Configuration must be Debug or Release."
+            exit 1
+          fi
+          dotnet build "Barbara Kierowca/Barbara Kierowca.csproj" \
+            -f net10.0-ios -c "$CONFIGURATION" -r ios-arm64 \
+            -p:TargetFrameworks=net10.0-ios -p:EnableCodeSigning=false -p:BuildIpa=false
+          APP_PATH=$(find "Barbara Kierowca/bin/$CONFIGURATION/net10.0-ios/ios-arm64" \
+            -maxdepth 1 -type d -name '*.app' -print -quit)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::MAUI build did not produce an iOS app bundle."
+            exit 1
+          fi
+          mkdir -p "$GITHUB_WORKSPACE/build/Payload"
+          ditto "$APP_PATH" "$GITHUB_WORKSPACE/build/Payload/$(basename "$APP_PATH")"
+          cd "$GITHUB_WORKSPACE/build"
+          zip -qry "$BUILD_ID.ipa" Payload
+          echo "Created unsigned IPA: build/$BUILD_ID.ipa"
+
       - name: Build IPA
+        if: steps.detect.outputs.type != 'maui'
         env:
           BUILD_ID: ${{ steps.params.outputs.build_id }}
           IOS_PATH: ${{ steps.params.outputs.ios_path }}
